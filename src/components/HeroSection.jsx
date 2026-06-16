@@ -1,4 +1,7 @@
 import { bakery } from "../lib/data";
+// 1. Rendu images-aiyum top-la import பண்ணிக்கோங்க bro
+import bakeryLogo from "../assets/logo.png";
+import heroBanner from "../assets/hero.png";
 
 export default function HeroSection() {
   const h = new Date().getHours();
@@ -17,8 +20,9 @@ export default function HeroSection() {
             </p>
           </div>
           <div className="w-12 h-12 rounded-full bg-white/15 border-2 border-white/30 flex items-center justify-center overflow-hidden">
+            {/* 2. Inga bakeryLogo variable-ah use பண்ணிருக்கேன் */}
             <img
-              src="/src/assets/logo.png" /* Inga unga image path-ah potukoanga */
+              src={bakeryLogo}
               alt="Bakery Logo"
               className="w-full h-full object-cover"
             />
@@ -27,8 +31,9 @@ export default function HeroSection() {
 
         {/* Banner */}
         <div className="relative aspect-[16/9] sm:aspect-[21/9] overflow-hidden rounded-3xl shadow-xl">
+          {/* 3. Inga heroBanner variable-ah use பண்ணிருக்கேன் */}
           <img
-            src="/src/assets/hero.png"
+            src={heroBanner}
             alt="Cookie Jar Bakery"
             className="w-full h-full object-cover"
           />
