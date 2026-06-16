@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 
 // Inga duration-ah maathிக்கலாம் (6 seconds)
-const SPLASH_DURATION_MS = 6000;
+const SPLASH_DURATION_MS = 5000;
 
 export default function SplashScreen({ onFinish }) {
   const [visible, setVisible] = useState(true);
