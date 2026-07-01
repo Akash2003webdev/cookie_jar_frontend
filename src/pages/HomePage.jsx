@@ -1,14 +1,35 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import HeroSection from '../components/HeroSection'
 import SearchBar from '../components/SearchBar'
 import ProductCard from '../components/ProductCard'
 import ReviewCard from '../components/ReviewCard'
 import Footer from '../components/Footer'
-import { products, initialReviews } from '../lib/data'
+import { fetchProducts, fetchOverallReviews } from '../lib/api'
 
 export default function HomePage({ onViewProduct, onNav }) {
   const [query, setQuery]       = useState('')
   const [category, setCategory] = useState(null)
+  const [products, setProducts] = useState([])
+  const [reviews, setReviews]   = useState([])
+  const [loading, setLoading]   = useState(true)
+  const [error, setError]       = useState(null)
+
+  useEffect(() => {
+    let active = true
+    setLoading(true)
+    Promise.all([fetchProducts(), fetchOverallReviews()])
+      .then(([p, r]) => {
+        if (!active) return
+        setProducts(p)
+        setReviews(r.slice(0, 3))
+      })
+      .catch((err) => {
+        console.error(err)
+        if (active) setError('Could not load products right now.')
+      })
+      .finally(() => active && setLoading(false))
+    return () => { active = false }
+  }, [])
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
@@ -21,7 +42,7 @@ export default function HomePage({ onViewProduct, onNav }) {
       const mc = !category || p.category === category
       return mq && mc
     })
-  }, [query, category])
+  }, [products, query, category])
 
   return (
     <>
@@ -43,12 +64,22 @@ export default function HomePage({ onViewProduct, onNav }) {
               {category || 'Popular Bakes'}
             </h2>
           </div>
-          <span className="text-xs text-gray-400 font-medium">
-            {filtered.length} item{filtered.length !== 1 ? 's' : ''}
-          </span>
+          {!loading && (
+            <span className="text-xs text-gray-400 font-medium">
+              {filtered.length} item{filtered.length !== 1 ? 's' : ''}
+            </span>
+          )}
         </div>
 
-        {filtered.length === 0 ? (
+        {loading ? (
+          <div className="mt-6 bg-white rounded-3xl p-10 text-center text-sm text-gray-400 shadow-soft">
+            Loading menu...
+          </div>
+        ) : error ? (
+          <div className="mt-6 bg-white rounded-3xl p-10 text-center text-sm text-red-400 shadow-soft">
+            {error}
+          </div>
+        ) : filtered.length === 0 ? (
           <div className="mt-6 bg-white rounded-3xl p-10 text-center text-sm text-gray-400 shadow-soft">
             No products match your search. Try a different keyword.
           </div>
@@ -75,11 +106,13 @@ export default function HomePage({ onViewProduct, onNav }) {
             View all →
           </button>
         </div>
-        <div className="mt-4 grid gap-3 sm:grid-cols-3">
-          {initialReviews.map((r, i) => (
-            <ReviewCard key={r.id} review={r} index={i} />
-          ))}
-        </div>
+        {reviews.length > 0 && (
+          <div className="mt-4 grid gap-3 sm:grid-cols-3">
+            {reviews.map((r, i) => (
+              <ReviewCard key={r.id} review={r} index={i} />
+            ))}
+          </div>
+        )}
       </section>
 
       <Footer />

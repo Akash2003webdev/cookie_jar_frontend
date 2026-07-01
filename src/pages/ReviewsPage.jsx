@@ -1,28 +1,48 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import ReviewCard from '../components/ReviewCard'
 import Toast from '../components/Toast'
-import { initialReviews } from '../lib/data'
+import { fetchOverallReviews, submitOverallReview } from '../lib/api'
 
 export default function ReviewsPage({ onBack }) {
-  const [reviews, setReviews] = useState(initialReviews)
+  const [reviews, setReviews] = useState([])
+  const [loading, setLoading] = useState(true)
   const [name, setName]       = useState('')
   const [rating, setRating]   = useState(0)
   const [hover, setHover]     = useState(0)
   const [message, setMessage] = useState('')
   const [toast, setToast]     = useState(null)
+  const [submitting, setSubmitting] = useState(false)
 
-  function submit(e) {
+  useEffect(() => {
+    let active = true
+    fetchOverallReviews()
+      .then((data) => active && setReviews(data))
+      .catch((err) => console.error(err))
+      .finally(() => active && setLoading(false))
+    return () => { active = false }
+  }, [])
+
+  async function submit(e) {
     e.preventDefault()
     if (name.trim().length < 2)   { setToast('Name must be at least 2 characters'); return }
     if (rating === 0)              { setToast('Please select a rating'); return }
     if (message.trim().length < 5) { setToast('Please write a longer review'); return }
 
-    setReviews((prev) => [
-      { id: Date.now() + '', name: name.trim(), rating, message: message.trim(), date: 'Just now' },
-      ...prev,
-    ])
-    setName(''); setRating(0); setMessage('')
-    setToast('🎉 Thank you! Your review has been added.')
+    setSubmitting(true)
+    try {
+      await submitOverallReview({ name: name.trim(), rating, message: message.trim() })
+      setReviews((prev) => [
+        { id: Date.now() + '', name: name.trim(), rating, message: message.trim(), date: 'Just now' },
+        ...prev,
+      ])
+      setName(''); setRating(0); setMessage('')
+      setToast('🎉 Thank you! Your review has been added.')
+    } catch (err) {
+      console.error(err)
+      setToast('Something went wrong. Please try again.')
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   return (
@@ -87,19 +107,24 @@ export default function ReviewsPage({ onBack }) {
 
             <button
               type="submit"
-              className="w-full bg-primary text-white rounded-2xl py-3 text-sm font-bold hover:bg-primary-light active:scale-[0.97] transition-all"
+              disabled={submitting}
+              className="w-full bg-primary text-white rounded-2xl py-3 text-sm font-bold hover:bg-primary-light active:scale-[0.97] transition-all disabled:opacity-60"
             >
-              Submit Review
+              {submitting ? 'Submitting...' : 'Submit Review'}
             </button>
           </form>
         </div>
 
         {/* Review list */}
-        <div className="flex flex-col gap-3">
-          {reviews.map((r, i) => (
-            <ReviewCard key={r.id} review={r} index={i} />
-          ))}
-        </div>
+        {loading ? (
+          <p className="text-sm text-gray-400 text-center">Loading reviews...</p>
+        ) : (
+          <div className="flex flex-col gap-3">
+            {reviews.map((r, i) => (
+              <ReviewCard key={r.id} review={r} index={i} />
+            ))}
+          </div>
+        )}
       </div>
     </>
   )

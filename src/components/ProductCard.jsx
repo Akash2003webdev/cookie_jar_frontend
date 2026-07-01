@@ -2,6 +2,8 @@ import Stars from './Stars'
 import StockBadge from './StockBadge'
 
 export default function ProductCard({ product, onView, index }) {
+  const hasMultipleVariants = product.variants && product.variants.length > 1
+
   return (
     <div
       className="bg-white rounded-3xl overflow-hidden shadow-soft hover:-translate-y-1 hover:shadow-card transition-all duration-250 cursor-pointer animate-fade-up"
@@ -17,7 +19,7 @@ export default function ProductCard({ product, onView, index }) {
           className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
         />
         <div className="absolute top-2.5 left-2.5">
-          <StockBadge stock={product.stock} />
+          <StockBadge status={product.status} />
         </div>
       </div>
 
@@ -28,10 +30,19 @@ export default function ProductCard({ product, onView, index }) {
 
         <div className="flex items-center justify-between mt-2">
           <div className="flex items-center gap-1 text-xs font-semibold">
-            <Stars rating={product.rating} size={12} />
-            <span>{product.rating}</span>
+            {product.reviewCount > 0 ? (
+              <>
+                <Stars rating={product.rating} size={12} />
+                <span>{product.rating}</span>
+              </>
+            ) : (
+              <span className="text-gray-400">New</span>
+            )}
           </div>
-          <span className="text-base font-black text-primary">₹{product.price}</span>
+          <span className="text-base font-black text-primary">
+            {hasMultipleVariants && <span className="text-[11px] font-semibold text-gray-400 mr-1">From</span>}
+            ₹{product.price}
+          </span>
         </div>
 
         <button className="w-full mt-2.5 bg-primary text-white rounded-2xl py-2.5 text-sm font-bold hover:bg-primary-light active:scale-[0.97] transition-all">
