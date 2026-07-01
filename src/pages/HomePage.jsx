@@ -4,24 +4,26 @@ import SearchBar from '../components/SearchBar'
 import ProductCard from '../components/ProductCard'
 import ReviewCard from '../components/ReviewCard'
 import Footer from '../components/Footer'
-import { fetchProducts, fetchOverallReviews } from '../lib/api'
+import { fetchProducts, fetchOverallReviews, fetchCategories } from '../lib/api'
 
 export default function HomePage({ onViewProduct, onNav }) {
-  const [query, setQuery]       = useState('')
-  const [category, setCategory] = useState(null)
-  const [products, setProducts] = useState([])
-  const [reviews, setReviews]   = useState([])
-  const [loading, setLoading]   = useState(true)
-  const [error, setError]       = useState(null)
+  const [query, setQuery]         = useState('')
+  const [category, setCategory]   = useState(null)
+  const [products, setProducts]   = useState([])
+  const [categories, setCategories] = useState([])
+  const [reviews, setReviews]     = useState([])
+  const [loading, setLoading]     = useState(true)
+  const [error, setError]         = useState(null)
 
   useEffect(() => {
     let active = true
     setLoading(true)
-    Promise.all([fetchProducts(), fetchOverallReviews()])
-      .then(([p, r]) => {
+    Promise.all([fetchProducts(), fetchOverallReviews(), fetchCategories()])
+      .then(([p, r, c]) => {
         if (!active) return
         setProducts(p)
         setReviews(r.slice(0, 3))
+        setCategories(c)
       })
       .catch((err) => {
         console.error(err)
@@ -51,7 +53,13 @@ export default function HomePage({ onViewProduct, onNav }) {
       {/* Search */}
       <section className="max-w-6xl mx-auto px-5 -mt-6 sm:-mt-8">
         <div className="bg-white rounded-3xl p-4 sm:p-5 shadow-card">
-          <SearchBar value={query} onChange={setQuery} active={category} onCategory={setCategory} />
+          <SearchBar
+            value={query}
+            onChange={setQuery}
+            active={category}
+            onCategory={setCategory}
+            categories={categories}
+          />
         </div>
       </section>
 

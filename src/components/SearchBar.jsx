@@ -1,6 +1,4 @@
-const categories = ['Cake', 'Brownie', 'Pastry', 'Dessert', 'Cookies', 'Birthday Cake']
-
-export default function SearchBar({ value, onChange, active, onCategory }) {
+export default function SearchBar({ value, onChange, active, onCategory, categories = [] }) {
   return (
     <div>
       {/* Search input */}
@@ -21,7 +19,7 @@ export default function SearchBar({ value, onChange, active, onCategory }) {
         />
       </div>
 
-      {/* Category pills */}
+      {/* Category pills - dynamic, from Supabase product_category table */}
       <div className="flex gap-2 overflow-x-auto scrollbar-hide pt-3">
         <button
           onClick={() => onCategory(null)}
@@ -33,13 +31,13 @@ export default function SearchBar({ value, onChange, active, onCategory }) {
         </button>
         {categories.map((c) => (
           <button
-            key={c}
-            onClick={() => onCategory(c === active ? null : c)}
+            key={c.id}
+            onClick={() => onCategory(c.name === active ? null : c.name)}
             className={`flex-shrink-0 px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-colors ${
-              active === c ? 'bg-primary text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              active === c.name ? 'bg-primary text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
             }`}
           >
-            {c}
+            {c.name}
           </button>
         ))}
       </div>
