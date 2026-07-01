@@ -3,10 +3,10 @@ import Stars from '../components/Stars'
 import StockBadge from '../components/StockBadge'
 import ReviewCard from '../components/ReviewCard'
 import Toast from '../components/Toast'
-import { bakery } from '../lib/data'
 import { submitProductReview } from '../lib/api'
+import { useCart } from '../context/CartContext'
 
-export default function ProductDetailPage({ product, onBack }) {
+export default function ProductDetailPage({ product, onBack, onNav }) {
   const [reviews, setReviews] = useState(product.reviews)
   const [name, setName] = useState('')
   const [rating, setRating] = useState(0)
@@ -14,6 +14,46 @@ export default function ProductDetailPage({ product, onBack }) {
   const [message, setMessage] = useState('')
   const [toast, setToast] = useState(null)
   const [submitting, setSubmitting] = useState(false)
+
+  const { addItem } = useCart()
+  const sortedVariants = product.variants.slice().sort((a, b) => a.price - b.price)
+  const [selectedVariant, setSelectedVariant] = useState(sortedVariants[0] || null)
+  const [qty, setQty] = useState(1)
+  const isOutOfStock = product.status === 'out_of_stock'
+  const isWeightBased = selectedVariant?.name?.toLowerCase().includes('kg')
+
+  const variantIndex = sortedVariants.findIndex((v) => v.name === selectedVariant?.name)
+
+  function selectVariant(v) {
+    setSelectedVariant(v)
+    setQty(1)
+  }
+
+  function stepVariant(direction) {
+    const nextIndex = variantIndex + direction
+    if (nextIndex < 0 || nextIndex >= sortedVariants.length) return
+    setSelectedVariant(sortedVariants[nextIndex])
+  }
+
+  function handleAddToCart() {
+    if (!selectedVariant) return
+    addItem(
+      {
+        productId: product.id,
+        name: product.name,
+        variantName: selectedVariant.name,
+        price: selectedVariant.price,
+        image: product.image,
+      },
+      qty
+    )
+    setToast(`✅ Added ${qty} × ${product.name} (${selectedVariant.name}) to cart`)
+  }
+
+  function handleOrderNow() {
+    handleAddToCart()
+    onNav('cart')
+  }
 
   async function submit(e) {
     e.preventDefault()
@@ -82,15 +122,26 @@ export default function ProductDetailPage({ product, onBack }) {
             </div>
           )}
 
-          {/* Variant pricing */}
+          {/* Variant selector */}
           <div className="flex flex-wrap gap-2">
             {product.variants.length > 0 ? (
-              product.variants.map((v) => (
-                <div key={v.id || v.name} className="bg-gray-50 rounded-2xl px-4 py-2">
-                  <span className="text-lg font-black text-primary">₹{v.price}</span>
-                  <span className="text-xs text-gray-400 ml-1.5">/ {v.name}</span>
-                </div>
-              ))
+              product.variants.map((v) => {
+                const isSelected = selectedVariant?.name === v.name
+                return (
+                  <button
+                    key={v.id || v.name}
+                    onClick={() => selectVariant(v)}
+                    className={`rounded-2xl px-4 py-2 border-none cursor-pointer transition-colors ${
+                      isSelected ? 'bg-primary text-white' : 'bg-gray-50 text-gray-700 hover:bg-gray-100'
+                    }`}
+                  >
+                    <span className="text-base font-black">₹{v.price}</span>
+                    <span className={`text-xs ml-1.5 ${isSelected ? 'text-white/80' : 'text-gray-400'}`}>
+                      / {v.name}
+                    </span>
+                  </button>
+                )
+              })
             ) : (
               <p className="text-sm text-gray-400">Pricing not available yet</p>
             )}
@@ -114,14 +165,68 @@ export default function ProductDetailPage({ product, onBack }) {
             </div>
           </div>
 
-          <div className="bg-gray-50 rounded-3xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-            <p className="text-sm text-gray-500 flex gap-1.5 items-center">🕙 Closes {bakery.closes}</p>
-            <a
-              href={`tel:${bakery.phoneRaw}`}
-              className="bg-primary text-white rounded-2xl px-5 py-2.5 text-sm font-bold hover:bg-primary-light transition-colors no-underline"
-            >
-              📞 Call to Order
-            </a>
+          <div className="bg-gray-50 rounded-3xl p-4 flex flex-col gap-3">
+            {isWeightBased ? (
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-bold text-gray-500">Weight</span>
+                <div className="flex items-center gap-2.5 bg-white rounded-full px-2 py-1 shadow-soft">
+                  <button
+                    onClick={() => stepVariant(-1)}
+                    disabled={variantIndex <= 0}
+                    className="w-8 h-8 rounded-full bg-gray-50 text-primary font-bold text-lg flex items-center justify-center border-none cursor-pointer active:scale-90 transition-transform disabled:opacity-30 disabled:cursor-not-allowed"
+                  >
+                    −
+                  </button>
+                  <span className="text-sm font-bold w-14 text-center">{selectedVariant.name}</span>
+                  <button
+                    onClick={() => stepVariant(1)}
+                    disabled={variantIndex >= sortedVariants.length - 1}
+                    className="w-8 h-8 rounded-full bg-gray-50 text-primary font-bold text-lg flex items-center justify-center border-none cursor-pointer active:scale-90 transition-transform disabled:opacity-30 disabled:cursor-not-allowed"
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-bold text-gray-500">Quantity</span>
+                <div className="flex items-center gap-2.5 bg-white rounded-full px-2 py-1 shadow-soft">
+                  <button
+                    onClick={() => setQty((q) => Math.max(1, q - 1))}
+                    className="w-8 h-8 rounded-full bg-gray-50 text-primary font-bold text-lg flex items-center justify-center border-none cursor-pointer active:scale-90 transition-transform"
+                  >
+                    −
+                  </button>
+                  <span className="text-sm font-bold w-5 text-center">{qty}</span>
+                  <button
+                    onClick={() => setQty((q) => q + 1)}
+                    className="w-8 h-8 rounded-full bg-gray-50 text-primary font-bold text-lg flex items-center justify-center border-none cursor-pointer active:scale-90 transition-transform"
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+            )}
+
+            <div className="flex gap-2.5">
+              <button
+                onClick={handleAddToCart}
+                disabled={isOutOfStock || !selectedVariant}
+                className="flex-1 bg-white border-2 border-primary text-primary rounded-2xl py-3 text-sm font-bold hover:bg-primary/5 active:scale-[0.97] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                🛒 Add to Cart
+              </button>
+              <button
+                onClick={handleOrderNow}
+                disabled={isOutOfStock || !selectedVariant}
+                className="flex-1 bg-primary text-white rounded-2xl py-3 text-sm font-bold hover:bg-primary-light active:scale-[0.97] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Order Now →
+              </button>
+            </div>
+            {isOutOfStock && (
+              <p className="text-xs text-red-500 text-center font-semibold">This item is currently out of stock</p>
+            )}
           </div>
         </div>
       </div>

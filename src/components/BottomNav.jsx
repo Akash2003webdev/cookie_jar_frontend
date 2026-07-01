@@ -1,4 +1,4 @@
-import { bakery } from '../lib/data'
+import { useCart } from '../context/CartContext'
 
 const HomeIcon = () => (
   <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -16,14 +16,17 @@ const StarIcon = () => (
     <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
   </svg>
 )
-const PhoneIcon = () => (
+const CartIcon = () => (
   <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013 7.79a2 2 0 012-2.18h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L9.91 12a16 16 0 006.29 6.29l.62-.62a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z" />
+    <circle cx="9" cy="21" r="1" />
+    <circle cx="20" cy="21" r="1" />
+    <path d="M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 002-1.61L23 6H6" />
   </svg>
 )
 
 export default function BottomNav({ page, onNav }) {
-  const base = 'flex flex-col items-center gap-0.5 py-1.5 px-2 text-[11px] font-medium flex-1 transition-colors border-none bg-transparent cursor-pointer'
+  const { count } = useCart()
+  const base = 'relative flex flex-col items-center gap-0.5 py-1.5 px-2 text-[11px] font-medium flex-1 transition-colors border-none bg-transparent cursor-pointer'
   const active = 'text-primary'
   const inactive = 'text-gray-400 hover:text-gray-600'
 
@@ -39,9 +42,17 @@ export default function BottomNav({ page, onNav }) {
         <button className={`${base} ${page === 'reviews' ? active : inactive}`} onClick={() => onNav('reviews')}>
           <StarIcon />Reviews
         </button>
-        <a href={`tel:${bakery.phoneRaw}`} className={`${base} ${inactive} no-underline`}>
-          <PhoneIcon />Call
-        </a>
+        <button className={`${base} ${page === 'cart' ? active : inactive}`} onClick={() => onNav('cart')}>
+          <span className="relative">
+            <CartIcon />
+            {count > 0 && (
+              <span className="absolute -top-1.5 -right-2 bg-primary text-white text-[9px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
+                {count > 9 ? '9+' : count}
+              </span>
+            )}
+          </span>
+          Cart
+        </button>
       </div>
     </div>
   )

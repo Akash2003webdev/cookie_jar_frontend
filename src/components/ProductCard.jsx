@@ -1,8 +1,24 @@
 import Stars from './Stars'
 import StockBadge from './StockBadge'
+import { useCart } from '../context/CartContext'
 
 export default function ProductCard({ product, onView, index }) {
   const hasMultipleVariants = product.variants && product.variants.length > 1
+  const { addItem } = useCart()
+  const isOutOfStock = product.status === 'out_of_stock'
+  const defaultVariant = product.variants?.[0]
+
+  function quickAdd(e) {
+    e.stopPropagation()
+    if (!defaultVariant) return
+    addItem({
+      productId: product.id,
+      name: product.name,
+      variantName: defaultVariant.name,
+      price: defaultVariant.price,
+      image: product.image,
+    })
+  }
 
   return (
     <div
@@ -45,9 +61,19 @@ export default function ProductCard({ product, onView, index }) {
           </span>
         </div>
 
-        <button className="w-full mt-2.5 bg-primary text-white rounded-2xl py-2.5 text-sm font-bold hover:bg-primary-light active:scale-[0.97] transition-all">
-          View Details →
-        </button>
+        <div className="flex gap-2 mt-2.5">
+          <button className="flex-1 bg-primary text-white rounded-2xl py-2.5 text-sm font-bold hover:bg-primary-light active:scale-[0.97] transition-all">
+            View Details →
+          </button>
+          <button
+            onClick={quickAdd}
+            disabled={isOutOfStock || !defaultVariant}
+            title="Quick add to cart"
+            className="w-10 flex-shrink-0 bg-gray-50 text-primary rounded-2xl text-base font-bold hover:bg-gray-100 active:scale-90 transition-all border-none cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            🛒
+          </button>
+        </div>
       </div>
     </div>
   )
