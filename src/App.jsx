@@ -9,6 +9,7 @@ import CategoryPage from './pages/CategoryPage'
 import ProductDetailPage from './pages/ProductDetailPage'
 import ReviewsPage from './pages/ReviewsPage'
 import CartPage from './pages/CartPage'
+import AdminPage from './pages/AdminPage'
 import FloatingWhatsApp from './components/FloatingWhatsApp'
 
 export default function App() {
@@ -38,9 +39,11 @@ export default function App() {
 
   if (splash) return <SplashScreen onFinish={() => setSplash(false)} />
 
+  const isAdmin = page === 'admin'
+
   return (
     <CartProvider>
-      <div className="min-h-screen bg-[#f8f7f4] pb-20 sm:pb-0">
+      <div className={`min-h-screen bg-[#f8f7f4] ${isAdmin ? '' : 'pb-20 sm:pb-0'}`}>
         <Header page={page} onNav={navigate} />
 
         {page === 'home'     && <HomePage onViewProduct={viewProduct} onNav={navigate} />}
@@ -61,9 +64,14 @@ export default function App() {
         )}
         {page === 'reviews'  && <ReviewsPage onBack={() => navigate('home')} />}
         {page === 'cart'     && <CartPage onBack={() => navigate('home')} onNav={navigate} />}
+        {page === 'admin'    && <AdminPage onExit={() => navigate('home')} />}
 
-        <FloatingWhatsApp />
-        <BottomNav page={page} onNav={navigate} />
+        {!isAdmin && (
+          <>
+            <FloatingWhatsApp />
+            <BottomNav page={page} onNav={navigate} />
+          </>
+        )}
       </div>
     </CartProvider>
   )

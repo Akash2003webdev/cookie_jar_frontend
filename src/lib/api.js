@@ -62,6 +62,7 @@ function mapCategory(row) {
     name: row.category_name,
     slug: row.category_name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
     image: row.category_image || PLACEHOLDER_IMAGE,
+    status: row.category_status || 'active',
   }
 }
 
@@ -149,3 +150,122 @@ export async function submitOverallReview({ name, rating, message }) {
 
   if (error) throw error
 }
+
+// =====================================================================
+// ---------- ADMIN FUNCTIONS (category / product / variant CRUD) ------
+// =====================================================================
+
+// Admin needs to see inactive categories too, so no status filter here.
+export async function fetchAllCategoriesAdmin() {
+  const { data, error } = await supabase
+    .from('product_category')
+    .select('*')
+    .order('category_name')
+
+  if (error) throw error
+  return (data || []).map(mapCategory)
+}
+
+export async function createCategory({ name, image, status }) {
+  const { data, error } = await supabase
+    .from('product_category')
+    .insert({ category_name: name, category_image: image || null, category_status: status || 'active' })
+    .select()
+    .single()
+
+  if (error) throw error
+  return mapCategory(data)
+}
+
+export async function updateCategory(id, { name, image, status }) {
+  const { data, error } = await supabase
+    .from('product_category')
+    .update({ category_name: name, category_image: image || null, category_status: status })
+    .eq('id', id)
+    .select()
+    .single()
+
+  if (error) throw error
+  return mapCategory(data)
+}
+
+export async function deleteCategory(id) {
+  const { error } = await supabase.from('product_category').delete().eq('id', id)
+  if (error) throw error
+}
+
+// Admin product list - all products regardless of status, with variants + category joined
+export async function fetchAllProductsAdmin() {
+  const { data, error } = await supabase
+    .from('product_data')
+    .select(PRODUCT_SELECT)
+    .order('product_name')
+
+  if (error) throw error
+  return (data || []).map(mapProduct)
+}
+
+export async function createProduct({ name, categoryId, description, status, images }) {
+  const { data, error } = await supabase
+    .from('product_data')
+    .insert({
+      product_name: name,
+      category_id: categoryId,
+      product_discription: description || '',
+      product_status: status || 'instock',
+      product_images: images && images.length ? images : [],
+    })
+    .select()
+    .single()
+
+  if (error) throw error
+  return data.id
+}
+
+export async function updateProduct(id, { name, categoryId, description, status, images }) {
+  const { error } = await supabase
+    .from('product_data')
+    .update({
+      product_name: name,
+      category_id: categoryId,
+      product_discription: description || '',
+      product_status: status,
+      product_images: images && images.length ? images : [],
+    })
+    .eq('id', id)
+
+  if (error) throw error
+}
+
+export async function deleteProduct(id) {
+  const { error } = await supabase.from('product_data').delete().eq('id', id)
+  if (error) throw error
+}
+
+// ---------- variants (admin) ----------
+
+export async function createVariant(productId, { name, price }) {
+  const { data, error } = await supabase
+    .from('product_variants')
+    .insert({ product_id: productId, variant_name: name, price })
+    .select()
+    .single()
+
+  if (error) throw error
+  return data
+}
+
+export async function updateVariant(id, { name, price }) {
+  const { error } = await supabase
+    .from('product_variants')
+    .update({ variant_name: name, price })
+    .eq('id', id)
+
+  if (error) throw error
+}
+
+export async function deleteVariant(id) {
+  const { error } = await supabase.from('product_variants').delete().eq('id', id)
+  if (error) throw error
+}
+

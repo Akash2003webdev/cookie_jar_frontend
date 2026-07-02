@@ -6,14 +6,20 @@ import ReviewCard from '../components/ReviewCard'
 import Footer from '../components/Footer'
 import { fetchProducts, fetchOverallReviews, fetchCategories } from '../lib/api'
 
+// Default category shown on the home page's "Popular Bakes" section.
+// Change this text if you want a different default category (must match
+// the category_name in your product_category table, case-insensitive).
+const DEFAULT_CATEGORY_MATCH = 'brownie'
+
 export default function HomePage({ onViewProduct, onNav }) {
-  const [query, setQuery]         = useState('')
-  const [category, setCategory]   = useState(null)
-  const [products, setProducts]   = useState([])
+  const [query, setQuery]           = useState('')
+  const [category, setCategory]     = useState(null)
+  const [isDefaultView, setIsDefaultView] = useState(true)
+  const [products, setProducts]     = useState([])
   const [categories, setCategories] = useState([])
-  const [reviews, setReviews]     = useState([])
-  const [loading, setLoading]     = useState(true)
-  const [error, setError]         = useState(null)
+  const [reviews, setReviews]       = useState([])
+  const [loading, setLoading]       = useState(true)
+  const [error, setError]           = useState(null)
 
   useEffect(() => {
     let active = true
@@ -24,6 +30,11 @@ export default function HomePage({ onViewProduct, onNav }) {
         setProducts(p)
         setReviews(r.slice(0, 3))
         setCategories(c)
+
+        const defaultCat = c.find((cat) =>
+          cat.name.toLowerCase().includes(DEFAULT_CATEGORY_MATCH)
+        )
+        if (defaultCat) setCategory(defaultCat.name)
       })
       .catch((err) => {
         console.error(err)
@@ -32,6 +43,11 @@ export default function HomePage({ onViewProduct, onNav }) {
       .finally(() => active && setLoading(false))
     return () => { active = false }
   }, [])
+
+  function handleCategoryChange(catName) {
+    setCategory(catName)
+    setIsDefaultView(false)
+  }
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
@@ -46,6 +62,8 @@ export default function HomePage({ onViewProduct, onNav }) {
     })
   }, [products, query, category])
 
+  const sectionTitle = isDefaultView ? 'Popular Bakes' : (category || 'All Items')
+
   return (
     <>
       <HeroSection />
@@ -57,7 +75,7 @@ export default function HomePage({ onViewProduct, onNav }) {
             value={query}
             onChange={setQuery}
             active={category}
-            onCategory={setCategory}
+            onCategory={handleCategoryChange}
             categories={categories}
           />
         </div>
@@ -68,9 +86,7 @@ export default function HomePage({ onViewProduct, onNav }) {
         <div className="flex items-end justify-between">
           <div>
             <p className="text-xs font-bold uppercase tracking-widest text-primary">Our Menu</p>
-            <h2 className="mt-1 text-2xl sm:text-3xl font-black">
-              {category || 'Popular Bakes'}
-            </h2>
+            <h2 className="mt-1 text-2xl sm:text-3xl font-black">{sectionTitle}</h2>
           </div>
           {!loading && (
             <span className="text-xs text-gray-400 font-medium">
