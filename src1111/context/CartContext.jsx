@@ -23,14 +23,14 @@ export function CartProvider({ children }) {
     }
   }, [cart])
 
-  function addItem({ productId, name, variantName, image }, qty = 1) {
+  function addItem({ productId, name, variantName, price, image }, qty = 1) {
     const key = `${productId}::${variantName}`
     setCart((prev) => {
       const existing = prev.find((i) => i.key === key)
       if (existing) {
         return prev.map((i) => (i.key === key ? { ...i, qty: i.qty + qty } : i))
       }
-      return [...prev, { key, productId, name, variantName, image, qty }]
+      return [...prev, { key, productId, name, variantName, price, image, qty }]
     })
   }
 
@@ -51,8 +51,9 @@ export function CartProvider({ children }) {
   }
 
   const count = useMemo(() => cart.reduce((sum, i) => sum + i.qty, 0), [cart])
+  const subtotal = useMemo(() => cart.reduce((sum, i) => sum + i.qty * i.price, 0), [cart])
 
-  const value = { cart, addItem, updateQty, removeItem, clearCart, count }
+  const value = { cart, addItem, updateQty, removeItem, clearCart, count, subtotal }
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>
 }

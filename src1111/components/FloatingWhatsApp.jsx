@@ -9,13 +9,13 @@ const WhatsAppIcon = () => (
 )
 
 export default function FloatingWhatsApp() {
-  const { cart } = useCart()
+  const { cart, subtotal } = useCart()
   const hasItems = cart.length > 0
 
   function handleClick() {
     let link
     if (hasItems) {
-      link = buildWhatsAppOrderLink({ cart, customerName: '', note: '' })
+      link = buildWhatsAppOrderLink({ cart, subtotal, customerName: '', note: '' })
     } else {
       const text = encodeURIComponent(
         `Hi ${bakery.name}! 👋 I'd like to know more about your menu.`

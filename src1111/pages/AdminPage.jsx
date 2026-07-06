@@ -90,14 +90,16 @@ function ProductFormModal({ initial, categories, onSave, onClose, saving }) {
     (initial?.variants || []).map((v) => ({ ...v, _deleted: false }))
   )
   const [newVariantName, setNewVariantName] = useState('')
+  const [newVariantPrice, setNewVariantPrice] = useState('')
 
   function addVariantRow() {
-    if (!newVariantName.trim()) return
+    if (!newVariantName.trim() || !newVariantPrice) return
     setVariants((prev) => [
       ...prev,
-      { id: null, name: newVariantName.trim(), _deleted: false },
+      { id: null, name: newVariantName.trim(), price: Number(newVariantPrice), _deleted: false },
     ])
     setNewVariantName('')
+    setNewVariantPrice('')
   }
 
   function removeVariantRow(index) {
@@ -113,7 +115,9 @@ function ProductFormModal({ initial, categories, onSave, onClose, saving }) {
   }
 
   function updateVariantField(index, field, value) {
-    setVariants((prev) => prev.map((v, i) => (i === index ? { ...v, [field]: value } : v)))
+    setVariants((prev) =>
+      prev.map((v, i) => (i === index ? { ...v, [field]: field === 'price' ? Number(value) : value } : v))
+    )
   }
 
   function submit(e) {
@@ -198,7 +202,7 @@ function ProductFormModal({ initial, categories, onSave, onClose, saving }) {
 
           {/* Variants */}
           <div>
-            <label className="block text-xs font-bold text-gray-400 mb-1.5">Variants (e.g. weight, size)</label>
+            <label className="block text-xs font-bold text-gray-400 mb-1.5">Variants (weight / price)</label>
             <div className="flex flex-col gap-2 mb-2">
               {visibleVariants.map((v, i) => {
                 const realIndex = variants.indexOf(v)
@@ -209,6 +213,13 @@ function ProductFormModal({ initial, categories, onSave, onClose, saving }) {
                       onChange={(e) => updateVariantField(realIndex, 'name', e.target.value)}
                       className="flex-1 min-w-0 border border-gray-200 rounded-xl py-1.5 px-3 text-xs outline-none bg-white"
                       placeholder="e.g. 1kg"
+                    />
+                    <input
+                      type="number"
+                      value={v.price}
+                      onChange={(e) => updateVariantField(realIndex, 'price', e.target.value)}
+                      className="w-20 border border-gray-200 rounded-xl py-1.5 px-3 text-xs outline-none bg-white"
+                      placeholder="₹"
                     />
                     <button
                       type="button"
@@ -227,6 +238,13 @@ function ProductFormModal({ initial, categories, onSave, onClose, saving }) {
                 onChange={(e) => setNewVariantName(e.target.value)}
                 className="flex-1 min-w-0 border border-gray-200 rounded-xl py-2 px-3 text-xs outline-none bg-white"
                 placeholder="Variant name e.g. 1/2kg"
+              />
+              <input
+                type="number"
+                value={newVariantPrice}
+                onChange={(e) => setNewVariantPrice(e.target.value)}
+                className="w-20 border border-gray-200 rounded-xl py-2 px-3 text-xs outline-none bg-white"
+                placeholder="₹"
               />
               <button
                 type="button"
@@ -332,9 +350,9 @@ export default function AdminPage({ onExit }) {
         if (v._deleted && v.id) {
           await deleteVariant(v.id)
         } else if (!v._deleted && v.id) {
-          await updateVariant(v.id, { name: v.name })
+          await updateVariant(v.id, { name: v.name, price: v.price })
         } else if (!v._deleted && !v.id) {
-          await createVariant(productId, { name: v.name })
+          await createVariant(productId, { name: v.name, price: v.price })
         }
       }
 
@@ -457,7 +475,7 @@ export default function AdminPage({ onExit }) {
                   <p className="text-sm font-extrabold truncate">{p.name}</p>
                   <p className="text-[11px] text-gray-400">{p.category} · {p.status.replace('_', ' ')}</p>
                   <p className="text-xs font-bold text-primary mt-0.5">
-                    {p.variants.map((v) => v.name).join(' · ') || 'No variants'}
+                    {p.variants.map((v) => `${v.name} ₹${v.price}`).join(' · ') || 'No variants'}
                   </p>
                 </div>
                 <div className="flex flex-col gap-1.5 flex-shrink-0">

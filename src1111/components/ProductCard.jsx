@@ -3,6 +3,7 @@ import StockBadge from './StockBadge'
 import { useCart } from '../context/CartContext'
 
 export default function ProductCard({ product, onView, index }) {
+  const hasMultipleVariants = product.variants && product.variants.length > 1
   const { addItem } = useCart()
   const isOutOfStock = product.status === 'out_of_stock'
   const defaultVariant = product.variants?.[0]
@@ -14,6 +15,7 @@ export default function ProductCard({ product, onView, index }) {
       productId: product.id,
       name: product.name,
       variantName: defaultVariant.name,
+      price: defaultVariant.price,
       image: product.image,
     })
   }
@@ -42,15 +44,21 @@ export default function ProductCard({ product, onView, index }) {
         <h3 className="text-[15px] font-extrabold truncate">{product.name}</h3>
         <p className="text-xs text-gray-500 mt-0.5 line-clamp-2">{product.description}</p>
 
-        <div className="flex items-center gap-1 text-xs font-semibold mt-2">
-          {product.reviewCount > 0 ? (
-            <>
-              <Stars rating={product.rating} size={12} />
-              <span>{product.rating}</span>
-            </>
-          ) : (
-            <span className="text-gray-400">New</span>
-          )}
+        <div className="flex items-center justify-between mt-2">
+          <div className="flex items-center gap-1 text-xs font-semibold">
+            {product.reviewCount > 0 ? (
+              <>
+                <Stars rating={product.rating} size={12} />
+                <span>{product.rating}</span>
+              </>
+            ) : (
+              <span className="text-gray-400">New</span>
+            )}
+          </div>
+          <span className="text-base font-black text-primary">
+            {hasMultipleVariants && <span className="text-[11px] font-semibold text-gray-400 mr-1">From</span>}
+            ₹{product.price}
+          </span>
         </div>
 
         <div className="flex gap-2 mt-2.5">

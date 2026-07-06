@@ -11,33 +11,12 @@ function formatDate(value) {
   return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
 }
 
-// Sorts variants sensibly by weight when the name looks like a weight
-// (e.g. "1/2kg" < "1kg" < "2kg"). Non-weight variants (e.g. "piece", "3pcs")
-// are kept in their original order, after the weight-based ones.
-function parseVariantWeight(name) {
-  if (!name) return null
-  const lower = name.toLowerCase().trim()
-  const fraction = lower.match(/^(\d+)\s*\/\s*(\d+)\s*kg/)
-  if (fraction) return Number(fraction[1]) / Number(fraction[2])
-  const whole = lower.match(/^([\d.]+)\s*kg/)
-  if (whole) return Number(whole[1])
-  return null
-}
-
-function sortVariants(variants) {
-  return variants
-    .map((v, i) => ({ ...v, _weight: parseVariantWeight(v.name), _i: i }))
-    .sort((a, b) => {
-      if (a._weight !== null && b._weight !== null) return a._weight - b._weight
-      if (a._weight !== null) return -1
-      if (b._weight !== null) return 1
-      return a._i - b._i
-    })
-    .map(({ _weight, _i, ...v }) => v)
-}
-
 function mapProduct(row) {
-  const variants = sortVariants(row.product_variants || [])
+  const variants = (row.product_variants || [])
+    .slice()
+    .sort((a, b) => Number(a.price) - Number(b.price))
+
+  const minPrice = variants.length ? Math.min(...variants.map((v) => Number(v.price))) : 0
 
   const reviews = row.product_review || []
   const avgRating = reviews.length
@@ -52,6 +31,7 @@ function mapProduct(row) {
   return {
     id: row.id,
     name: row.product_name,
+    price: minPrice,
     description: row.product_discription || '',
     longDescription: row.product_discription || '',
     status: row.product_status || 'instock',
@@ -62,7 +42,7 @@ function mapProduct(row) {
     image: images[0],
     images,
     features: ['Freshly Baked', 'Premium Ingredients'],
-    variants: variants.map((v) => ({ id: v.id, name: v.variant_name })),
+    variants: variants.map((v) => ({ id: v.id, name: v.variant_name, price: Number(v.price) })),
     reviews: reviews
       .slice()
       .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
@@ -89,7 +69,7 @@ function mapCategory(row) {
 const PRODUCT_SELECT = `
   *,
   product_category ( id, category_name ),
-  product_variants ( id, variant_name ),
+  product_variants ( id, variant_name, price ),
   product_review ( id, rating, cus_name, review_message, created_at )
 `
 
@@ -264,10 +244,10 @@ export async function deleteProduct(id) {
 
 // ---------- variants (admin) ----------
 
-export async function createVariant(productId, { name }) {
+export async function createVariant(productId, { name, price }) {
   const { data, error } = await supabase
     .from('product_variants')
-    .insert({ product_id: productId, variant_name: name })
+    .insert({ product_id: productId, variant_name: name, price })
     .select()
     .single()
 
@@ -275,10 +255,10 @@ export async function createVariant(productId, { name }) {
   return data
 }
 
-export async function updateVariant(id, { name }) {
+export async function updateVariant(id, { name, price }) {
   const { error } = await supabase
     .from('product_variants')
-    .update({ variant_name: name })
+    .update({ variant_name: name, price })
     .eq('id', id)
 
   if (error) throw error

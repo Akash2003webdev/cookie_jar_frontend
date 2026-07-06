@@ -23,12 +23,12 @@ function QtyStepper({ qty, onChange }) {
 }
 
 export default function CartPage({ onBack, onNav }) {
-  const { cart, updateQty, removeItem, clearCart } = useCart()
+  const { cart, updateQty, removeItem, clearCart, subtotal } = useCart()
   const [name, setName] = useState('')
   const [note, setNote] = useState('')
 
   function sendOrder() {
-    const link = buildWhatsAppOrderLink({ cart, customerName: name, note })
+    const link = buildWhatsAppOrderLink({ cart, subtotal, customerName: name, note })
     window.open(link, '_blank')
   }
 
@@ -79,7 +79,8 @@ export default function CartPage({ onBack, onNav }) {
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-extrabold truncate">{item.name}</p>
-              <p className="text-xs text-gray-400">{item.variantName}</p>
+              <p className="text-xs text-gray-400">{item.variantName} · ₹{item.price}</p>
+              <p className="text-sm font-bold text-primary mt-0.5">₹{item.price * item.qty}</p>
             </div>
             <div className="flex flex-col items-end gap-2">
               <QtyStepper qty={item.qty} onChange={(q) => updateQty(item.key, q)} />
@@ -113,8 +114,12 @@ export default function CartPage({ onBack, onNav }) {
         />
       </div>
 
-      {/* Checkout */}
+      {/* Total + checkout */}
       <div className="bg-white rounded-3xl p-5 shadow-card sticky bottom-24 sm:bottom-5">
+        <div className="flex items-center justify-between mb-4">
+          <span className="text-sm font-bold text-gray-500">Total</span>
+          <span className="text-2xl font-black text-primary">₹{subtotal}</span>
+        </div>
         <button
           onClick={sendOrder}
           className="w-full bg-[#25D366] text-white rounded-2xl py-3.5 text-sm font-bold hover:brightness-95 active:scale-[0.97] transition-all border-none cursor-pointer flex items-center justify-center gap-2"
@@ -122,7 +127,7 @@ export default function CartPage({ onBack, onNav }) {
           🟢 Order on WhatsApp
         </button>
         <p className="text-[11px] text-gray-400 text-center mt-2.5">
-          Order details will be sent to us on WhatsApp. We'll confirm availability and share the price with you.
+          Order details will be sent to us on WhatsApp. We'll confirm and share the total with delivery/pickup info.
         </p>
       </div>
     </div>
