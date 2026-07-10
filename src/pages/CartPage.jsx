@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { useCart } from '../context/CartContext'
 import { buildWhatsAppOrderLink } from '../lib/whatsapp'
+import { submitEnquiry } from '../lib/api'
+import Toast from '../components/Toast'
 
 function QtyStepper({ qty, onChange }) {
   return (
@@ -25,16 +27,45 @@ function QtyStepper({ qty, onChange }) {
 export default function CartPage({ onBack, onNav }) {
   const { cart, updateQty, removeItem, clearCart } = useCart()
   const [name, setName] = useState('')
-  const [note, setNote] = useState('')
+  const [phone, setPhone] = useState('')
+  const [toast, setToast] = useState(null)
+  const [sending, setSending] = useState(false)
 
-  function sendOrder() {
-    const link = buildWhatsAppOrderLink({ cart, customerName: name, note })
-    window.open(link, '_blank')
+  async function sendOrder() {
+    if (name.trim().length < 2) { setToast('Please enter your name'); return }
+    if (phone.trim().length < 8) { setToast('Please enter a valid phone number'); return }
+
+    setSending(true)
+    try {
+      await submitEnquiry({
+        customerName: name.trim(),
+        customerPhone: phone.trim(),
+        items: cart.map((item) => ({
+          product_id: item.productId,
+          product_name: item.name,
+          variant_name: item.variantName,
+          qty: item.qty,
+        })),
+      })
+
+      const link = buildWhatsAppOrderLink({ cart, customerName: name.trim(), note: `Phone: ${phone.trim()}` })
+      window.open(link, '_blank')
+
+      clearCart()
+      setName('')
+      setPhone('')
+    } catch (err) {
+      console.error(err)
+      setToast('Something went wrong sending your order. Please try again.')
+    } finally {
+      setSending(false)
+    }
   }
 
   if (cart.length === 0) {
     return (
       <div className="max-w-2xl mx-auto px-5 py-10 sm:py-16 text-center animate-fade-in">
+        {toast && <Toast msg={toast} onClose={() => setToast(null)} />}
         <p className="text-5xl mb-3">🛒</p>
         <h1 className="text-xl font-black mb-1.5">Your cart is empty</h1>
         <p className="text-sm text-gray-400 mb-6">Add something tasty from the menu first!</p>
@@ -50,6 +81,7 @@ export default function CartPage({ onBack, onNav }) {
 
   return (
     <div className="max-w-2xl mx-auto px-5 py-6 sm:py-10 animate-fade-in">
+      {toast && <Toast msg={toast} onClose={() => setToast(null)} />}
       <button
         onClick={onBack}
         className="inline-flex items-center gap-1.5 text-sm font-semibold text-gray-400 hover:text-gray-700 bg-transparent border-none cursor-pointer mb-5"
@@ -96,7 +128,8 @@ export default function CartPage({ onBack, onNav }) {
 
       {/* Customer details */}
       <div className="bg-white rounded-3xl p-5 shadow-soft mb-5">
-        <h2 className="text-sm font-bold mb-3">Your details (optional)</h2>
+        <h2 className="text-sm font-bold mb-3">Your details</h2>
+        <label className="block text-xs font-bold text-gray-400 mb-1.5">Name <span className="text-red-400">*</span></label>
         <input
           className="w-full border border-gray-200 rounded-2xl py-2.5 px-4 text-sm outline-none bg-gray-50 focus:border-primary focus:ring-2 focus:ring-primary/15 transition mb-3"
           value={name}
@@ -104,12 +137,14 @@ export default function CartPage({ onBack, onNav }) {
           placeholder="Your name"
           maxLength={60}
         />
-        <textarea
-          className="w-full border border-gray-200 rounded-2xl py-2.5 px-4 text-sm outline-none bg-gray-50 focus:border-primary focus:ring-2 focus:ring-primary/15 transition resize-none min-h-[70px]"
-          value={note}
-          onChange={(e) => setNote(e.target.value)}
-          placeholder="Delivery address / special note (optional)"
-          maxLength={300}
+        <label className="block text-xs font-bold text-gray-400 mb-1.5">Phone Number <span className="text-red-400">*</span></label>
+        <input
+          type="tel"
+          className="w-full border border-gray-200 rounded-2xl py-2.5 px-4 text-sm outline-none bg-gray-50 focus:border-primary focus:ring-2 focus:ring-primary/15 transition"
+          value={phone}
+          onChange={(e) => setPhone(e.target.value)}
+          placeholder="e.g. 9876543210"
+          maxLength={15}
         />
       </div>
 
@@ -117,9 +152,10 @@ export default function CartPage({ onBack, onNav }) {
       <div className="bg-white rounded-3xl p-5 shadow-card sticky bottom-24 sm:bottom-5">
         <button
           onClick={sendOrder}
-          className="w-full bg-[#25D366] text-white rounded-2xl py-3.5 text-sm font-bold hover:brightness-95 active:scale-[0.97] transition-all border-none cursor-pointer flex items-center justify-center gap-2"
+          disabled={sending}
+          className="w-full bg-[#25D366] text-white rounded-2xl py-3.5 text-sm font-bold hover:brightness-95 active:scale-[0.97] transition-all border-none cursor-pointer flex items-center justify-center gap-2 disabled:opacity-60"
         >
-          🟢 Order on WhatsApp
+          {sending ? 'Sending...' : '🟢 Order on WhatsApp'}
         </button>
         <p className="text-[11px] text-gray-400 text-center mt-2.5">
           Order details will be sent to us on WhatsApp. We'll confirm availability and share the price with you.

@@ -289,3 +289,151 @@ export async function deleteVariant(id) {
   if (error) throw error
 }
 
+// ---------- image upload (Supabase Storage) ----------
+// bucket must already exist: 'category-images' or 'product-images'
+export async function uploadImage(file, bucket) {
+  const ext = file.name.split('.').pop()
+  const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
+
+  const timeout = (ms) =>
+    new Promise((_, reject) => setTimeout(() => reject(new Error('Upload timed out')), ms))
+
+  const uploadPromise = supabase.storage.from(bucket).upload(fileName, file)
+  const { error } = await Promise.race([uploadPromise, timeout(20000)])
+  if (error) throw error
+
+  const { data } = supabase.storage.from(bucket).getPublicUrl(fileName)
+  return data.publicUrl
+}
+
+// ---------- overall reviews (admin) ----------
+
+export async function fetchAllReviewsAdmin() {
+  const { data, error } = await supabase
+    .from('overall_review')
+    .select('*')
+    .order('date', { ascending: false })
+
+  if (error) throw error
+  return (data || []).map((r) => ({
+    id: r.id,
+    name: r.cus_name,
+    rating: Number(r.rating),
+    message: r.review_message,
+    date: formatDate(r.date),
+  }))
+}
+
+export async function updateOverallReview(id, { name, rating, message }) {
+  const { error } = await supabase
+    .from('overall_review')
+    .update({ cus_name: name, rating, review_message: message })
+    .eq('id', id)
+
+  if (error) throw error
+}
+
+export async function deleteOverallReview(id) {
+  const { error } = await supabase.from('overall_review').delete().eq('id', id)
+  if (error) throw error
+}
+
+// ---------- enquiry (saves order details submitted via forms, e.g. birthday cake orders) ----------
+
+export async function submitEnquiry({ customerName, customerPhone, customerNote, items }) {
+  const { error } = await supabase.from('enquiry').insert({
+    customer_name: customerName,
+    customer_note: [customerPhone ? `Phone: ${customerPhone}` : null, customerNote]
+      .filter(Boolean)
+      .join(' | '),
+    items,
+  })
+  if (error) throw error
+}
+
+// ---------- birthday cake enquiry (dedicated table, separate from general enquiry) ----------
+
+export async function submitBirthdayEnquiry({
+  name,
+  contact,
+  birthDate,
+  deliveryDate,
+  cakeWeight,
+  description,
+  imageSample,
+  cakeFlavour,
+  sugarLevel,
+  flourType,
+  sweetenerType,
+  creamType,
+}) {
+  const { error } = await supabase.from('birthday_enquiry').insert({
+    name,
+    contact,
+    birth_date: birthDate || null,
+    delivery_date: deliveryDate,
+    cake_weight: cakeWeight,
+    description,
+    image_sample: imageSample || null,
+    cake_flavour: cakeFlavour,
+    sugar_level: sugarLevel,
+    flour_type: flourType,
+    sweetener_type: sweetenerType,
+    cream_type: creamType,
+  })
+  if (error) throw error
+}
+
+// ---------- admin: view / delete enquiries ----------
+
+export async function fetchAllEnquiriesAdmin() {
+  const { data, error } = await supabase
+    .from('enquiry')
+    .select('*')
+    .order('created_at', { ascending: false })
+
+  if (error) throw error
+  return (data || []).map((e) => ({
+    id: e.id,
+    customerName: e.customer_name,
+    customerNote: e.customer_note,
+    items: e.items || [],
+    createdAt: formatDate(e.created_at),
+  }))
+}
+
+export async function deleteEnquiry(id) {
+  const { error } = await supabase.from('enquiry').delete().eq('id', id)
+  if (error) throw error
+}
+
+export async function fetchAllBirthdayEnquiriesAdmin() {
+  const { data, error } = await supabase
+    .from('birthday_enquiry')
+    .select('*')
+    .order('created_at', { ascending: false })
+
+  if (error) throw error
+  return (data || []).map((e) => ({
+    id: e.id,
+    name: e.name,
+    contact: e.contact,
+    birthDate: e.birth_date,
+    deliveryDate: e.delivery_date,
+    cakeWeight: e.cake_weight,
+    description: e.description,
+    imageSample: e.image_sample,
+    cakeFlavour: e.cake_flavour,
+    sugarLevel: e.sugar_level,
+    flourType: e.flour_type,
+    sweetenerType: e.sweetener_type,
+    creamType: e.cream_type,
+    createdAt: formatDate(e.created_at),
+  }))
+}
+
+export async function deleteBirthdayEnquiry(id) {
+  const { error } = await supabase.from('birthday_enquiry').delete().eq('id', id)
+  if (error) throw error
+}
+

@@ -10,6 +10,7 @@ import ProductDetailPage from './pages/ProductDetailPage'
 import ReviewsPage from './pages/ReviewsPage'
 import CartPage from './pages/CartPage'
 import AdminPage from './pages/AdminPage'
+import BirthdayCakePage from './pages/BirthdayCakePage'
 import FloatingWhatsApp from './components/FloatingWhatsApp'
 
 export default function App() {
@@ -64,6 +65,7 @@ export default function App() {
         )}
         {page === 'reviews'  && <ReviewsPage onBack={() => navigate('home')} />}
         {page === 'cart'     && <CartPage onBack={() => navigate('home')} onNav={navigate} />}
+        {page === 'birthday' && <BirthdayCakePage onBack={() => navigate('menu')} />}
         {page === 'admin'    && <AdminPage onExit={() => navigate('home')} />}
 
         {!isAdmin && (

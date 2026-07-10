@@ -26,18 +26,21 @@ const CartIcon = () => (
 
 export default function BottomNav({ page, onNav }) {
   const { count } = useCart()
-  const base = 'relative flex flex-col items-center gap-0.5 py-1.5 px-2 text-[11px] font-medium flex-1 transition-colors border-none bg-transparent cursor-pointer'
+  const base = 'relative flex flex-col items-center gap-0.5 py-1.5 px-1 text-[10px] sm:text-[11px] font-medium flex-1 transition-colors border-none bg-transparent cursor-pointer'
   const active = 'text-primary'
   const inactive = 'text-gray-400 hover:text-gray-600'
 
   return (
     <div className="fixed bottom-0 left-0 right-0 bg-[rgba(248,247,244,0.97)] backdrop-blur-xl border-t border-gray-200 z-40">
-      <div className="flex max-w-sm mx-auto px-3 pb-safe">
+      <div className="flex max-w-md mx-auto px-2 pb-safe">
         <button className={`${base} ${page === 'home' ? active : inactive}`} onClick={() => onNav('home')}>
           <HomeIcon />Home
         </button>
         <button className={`${base} ${page === 'menu' ? active : inactive}`} onClick={() => onNav('menu')}>
           <MenuIcon />Menu
+        </button>
+        <button className={`${base} ${page === 'birthday' ? active : inactive}`} onClick={() => onNav('birthday')}>
+          <span className="text-base leading-none">🎂</span>Birthday
         </button>
         <button className={`${base} ${page === 'reviews' ? active : inactive}`} onClick={() => onNav('reviews')}>
           <StarIcon />Reviews
