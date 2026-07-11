@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from 'react'
 import HeroSection from '../components/HeroSection'
 import SearchBar from '../components/SearchBar'
+import CategoryShowcase from '../components/CategoryShowcase'
 import ProductCard from '../components/ProductCard'
 import ReviewCard from '../components/ReviewCard'
 import Footer from '../components/Footer'
@@ -71,15 +72,21 @@ export default function HomePage({ onViewProduct, onNav }) {
       {/* Search */}
       <section className="max-w-6xl mx-auto px-5 -mt-6 sm:-mt-8">
         <div className="bg-white rounded-3xl p-4 sm:p-5 shadow-card">
-          <SearchBar
-            value={query}
-            onChange={setQuery}
-            active={category}
-            onCategory={handleCategoryChange}
-            categories={categories}
-          />
+          <SearchBar value={query} onChange={setQuery} />
         </div>
       </section>
+
+      {/* Shop by Category */}
+      {categories.length > 0 && (
+        <section className="max-w-6xl mx-auto px-5 pt-6">
+          <CategoryShowcase
+            categories={categories}
+            active={category}
+            onCategory={handleCategoryChange}
+            onViewAll={() => onNav('menu')}
+          />
+        </section>
+      )}
 
       {/* Products */}
       <section className="max-w-6xl mx-auto px-5 py-8 sm:py-12">
