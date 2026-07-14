@@ -70,7 +70,7 @@ export default function App() {
 
         {!isAdmin && (
           <>
-            <FloatingWhatsApp onNav={navigate} />
+            <FloatingWhatsApp />
             <BottomNav page={page} onNav={navigate} />
           </>
         )}

@@ -21,26 +21,11 @@ export default function ProductDetailPage({ product, onBack, onNav }) {
   const [qty, setQty] = useState(1)
   const isOutOfStock = product.status === 'out_of_stock'
 
-  // Brownies only: let customer choose "per piece" or "by weight (kg)".
+  // Brownies only: let customer choose "per piece" or "by weight (kg)",
+  // and for weight, allow any custom kg amount (not limited to fixed variants).
   const isBrownie = product.category?.toLowerCase().includes('brownie')
   const [orderMode, setOrderMode] = useState('piece') // 'piece' | 'weight'
-
-  // Cake Variety's: kg calculation only, no separate piece/quantity stepper.
-  const isCakeVariety = product.category?.toLowerCase().includes('cake variety')
-
-  // Shared custom-weight input (used by Brownie "By Weight" mode and all Cake Variety's
-  // products). Steps in 0.5kg increments via +/-, but can also be typed directly -
-  // no upper limit, customer can enter any amount.
   const [customWeight, setCustomWeight] = useState(0.5)
-
-  function stepCustomWeight(direction) {
-    setCustomWeight((w) => {
-      const next = Math.round((w + direction * 0.5) * 100) / 100
-      return next < 0.5 ? 0.5 : next
-    })
-  }
-
-  const usesCustomWeight = isCakeVariety || (isBrownie && orderMode === 'weight')
 
   const variantIndex = sortedVariants.findIndex((v) => v.name === selectedVariant?.name)
 
@@ -50,8 +35,15 @@ export default function ProductDetailPage({ product, onBack, onNav }) {
     setSelectedVariant(sortedVariants[nextIndex])
   }
 
+  function stepCustomWeight(direction) {
+    setCustomWeight((w) => {
+      const next = Math.round((w + direction * 0.5) * 100) / 100
+      return next < 0.25 ? 0.25 : next
+    })
+  }
+
   function handleAddToCart() {
-    if (usesCustomWeight) {
+    if (isBrownie && orderMode === 'weight') {
       if (!customWeight || customWeight <= 0) return
       addItem(
         {
@@ -209,7 +201,7 @@ export default function ProductDetailPage({ product, onBack, onNav }) {
               </div>
             )}
 
-            {usesCustomWeight ? (
+            {isBrownie && orderMode === 'weight' ? (
               <div className="flex items-center justify-between">
                 <span className="text-sm font-bold text-gray-500">Weight (kg)</span>
                 <div className="flex items-center gap-2 bg-white rounded-full px-2 py-1 shadow-soft">
@@ -248,7 +240,7 @@ export default function ProductDetailPage({ product, onBack, onNav }) {
                       >
                         −
                       </button>
-                      <span className="text-sm font-bold w-14 text-center">{selectedVariant?.name}</span>
+                      <span className="text-sm font-bold w-14 text-center">{selectedVariant.name}</span>
                       <button
                         onClick={() => stepVariant(1)}
                         disabled={variantIndex >= sortedVariants.length - 1}
@@ -286,7 +278,9 @@ export default function ProductDetailPage({ product, onBack, onNav }) {
                 onClick={handleAddToCart}
                 disabled={
                   isOutOfStock ||
-                  (usesCustomWeight ? !customWeight || customWeight <= 0 : !isBrownie && !selectedVariant)
+                  (isBrownie
+                    ? (orderMode === 'weight' ? !customWeight : false)
+                    : !selectedVariant)
                 }
                 className="flex-1 bg-white border-2 border-primary text-primary rounded-2xl py-3 text-sm font-bold hover:bg-primary/5 active:scale-[0.97] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
@@ -296,7 +290,9 @@ export default function ProductDetailPage({ product, onBack, onNav }) {
                 onClick={handleOrderNow}
                 disabled={
                   isOutOfStock ||
-                  (usesCustomWeight ? !customWeight || customWeight <= 0 : !isBrownie && !selectedVariant)
+                  (isBrownie
+                    ? (orderMode === 'weight' ? !customWeight : false)
+                    : !selectedVariant)
                 }
                 className="flex-1 bg-primary text-white rounded-2xl py-3 text-sm font-bold hover:bg-primary-light active:scale-[0.97] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >

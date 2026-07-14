@@ -3,7 +3,6 @@ import { useCart } from '../context/CartContext'
 import { buildWhatsAppOrderLink } from '../lib/whatsapp'
 import { submitEnquiry } from '../lib/api'
 import Toast from '../components/Toast'
-import ConfirmOrderModal from '../components/ConfirmOrderModal'
 
 function QtyStepper({ qty, onChange }) {
   return (
@@ -31,15 +30,11 @@ export default function CartPage({ onBack, onNav }) {
   const [phone, setPhone] = useState('')
   const [toast, setToast] = useState(null)
   const [sending, setSending] = useState(false)
-  const [showConfirm, setShowConfirm] = useState(false)
 
-  function handleOrderClick() {
+  async function sendOrder() {
     if (name.trim().length < 2) { setToast('Please enter your name'); return }
     if (phone.trim().length < 8) { setToast('Please enter a valid phone number'); return }
-    setShowConfirm(true)
-  }
 
-  async function confirmSend() {
     setSending(true)
     try {
       await submitEnquiry({
@@ -56,11 +51,9 @@ export default function CartPage({ onBack, onNav }) {
       const link = buildWhatsAppOrderLink({ cart, customerName: name.trim(), note: `Phone: ${phone.trim()}` })
       window.open(link, '_blank')
 
-      setShowConfirm(false)
       clearCart()
       setName('')
       setPhone('')
-      setToast('✅ Order booked! We\'ll confirm on WhatsApp shortly.')
     } catch (err) {
       console.error(err)
       setToast('Something went wrong sending your order. Please try again.')
@@ -158,7 +151,7 @@ export default function CartPage({ onBack, onNav }) {
       {/* Checkout */}
       <div className="bg-white rounded-3xl p-5 shadow-card sticky bottom-24 sm:bottom-5">
         <button
-          onClick={handleOrderClick}
+          onClick={sendOrder}
           disabled={sending}
           className="w-full bg-[#25D366] text-white rounded-2xl py-3.5 text-sm font-bold hover:brightness-95 active:scale-[0.97] transition-all border-none cursor-pointer flex items-center justify-center gap-2 disabled:opacity-60"
         >
@@ -168,20 +161,6 @@ export default function CartPage({ onBack, onNav }) {
           Order details will be sent to us on WhatsApp. We'll confirm availability and share the price with you.
         </p>
       </div>
-
-      {showConfirm && (
-        <ConfirmOrderModal
-          confirming={sending}
-          onCancel={() => setShowConfirm(false)}
-          onConfirm={confirmSend}
-          summaryLines={[
-            `Name: ${name.trim()}`,
-            `Phone: ${phone.trim()}`,
-            '',
-            ...cart.map((item) => `• ${item.name} (${item.variantName}) x${item.qty}`),
-          ]}
-        />
-      )}
     </div>
   )
 }

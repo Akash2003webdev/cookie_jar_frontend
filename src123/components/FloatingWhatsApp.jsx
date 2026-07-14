@@ -1,4 +1,5 @@
 import { useCart } from '../context/CartContext'
+import { buildWhatsAppOrderLink } from '../lib/whatsapp'
 import { bakery } from '../lib/data'
 
 const WhatsAppIcon = () => (
@@ -7,21 +8,21 @@ const WhatsAppIcon = () => (
   </svg>
 )
 
-export default function FloatingWhatsApp({ onNav }) {
+export default function FloatingWhatsApp() {
   const { cart } = useCart()
   const hasItems = cart.length > 0
 
   function handleClick() {
+    let link
     if (hasItems) {
-      // Send them to the cart to fill details and confirm, instead of
-      // firing off an order straight from here without a name/phone.
-      onNav('cart')
-      return
+      link = buildWhatsAppOrderLink({ cart, customerName: '', note: '' })
+    } else {
+      const text = encodeURIComponent(
+        `Hi ${bakery.name}! 👋 I'd like to know more about your menu.`
+      )
+      link = `https://wa.me/${bakery.whatsapp}?text=${text}`
     }
-    const text = encodeURIComponent(
-      `Hi ${bakery.name}! 👋 I'd like to know more about your menu.`
-    )
-    window.open(`https://wa.me/${bakery.whatsapp}?text=${text}`, '_blank')
+    window.open(link, '_blank')
   }
 
   return (
